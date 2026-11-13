@@ -5,3 +5,4 @@ ratscanner.env
 *.env
 .DS_Store
 web-regfish/api/config.php
+localserver/**/dist/

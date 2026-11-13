@@ -4,6 +4,14 @@ Web scanner for Minecraft mods, plugins, clients and programs. `.jar` files are 
 
 **Uploaded files are never executed.** The server only reads bytes: no `java -jar`, no class loading, no `ClassLoader`/`defineClass`, and uploaded files are never offered for download.
 
+## Desktop apps (local only)
+
+**Windows:** download `RatScanner.exe` from the [latest release](https://github.com/Crxyi/RatScanner/releases/latest) and double-click it. It runs the scanner on `127.0.0.1` only and opens it in an app window (Edge/Chrome app mode) – no login, no limits, nothing is uploaded. The file is not code-signed, so Windows SmartScreen may show "Windows protected your PC" → *More info* → *Run anyway*. Built with `localserver/win/build.sh` (Node.js single executable application).
+
+**macOS:** `localserver/mac/build.sh` builds `RatScanner.app` (native WebKit window, bundled Node.js) into `~/Applications`.
+
+Scanned files are never executed by either app – they are only read.
+
 ## Run locally
 
 ```bash

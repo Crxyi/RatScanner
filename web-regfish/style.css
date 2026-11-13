@@ -587,3 +587,15 @@ main.view.enter { animation: view-in .28s var(--ease-out) both; }
 .chain code { font-family: var(--mono); font-size: 12px; }
 .dl-tbl td:last-child { text-align: right; width: 1%; white-space: nowrap; }
 .dl-tbl b { font-weight: 500; word-break: break-all; }
+
+.login-wall { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); }
+body.needs-login { overflow: hidden; }
+.login-card { width: 100%; max-width: 420px; text-align: center; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 34px 28px 26px; }
+.login-logo { width: 56px; height: 56px; margin: 0 auto 16px; display: grid; place-items: center; border: 1px solid var(--line2); border-radius: 14px; }
+.login-logo svg { width: 30px; height: 30px; }
+.login-card h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
+.login-card p { margin: 0 0 18px; color: var(--fg2); font-size: 14px; line-height: 1.5; }
+.login-card .btn-discord.big { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; font-size: 15px; border-radius: 10px; }
+.login-card .btn-discord.big svg { width: 20px; height: 20px; }
+.login-card .login-wait { margin: 14px 0 0; }
+.login-card p:last-child { margin-bottom: 0; margin-top: 16px; }

@@ -72,7 +72,7 @@ function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {} }
   return {
     enabled,
     me() {
-      const base = { local: true, discordEnabled: enabled, invite: cfg.invite || null };
+      const base = { local: true, requireLogin: enabled, discordEnabled: enabled, invite: cfg.invite || null };
       if (!session) return { ...base, loggedIn: false };
       return { ...base, loggedIn: true, user: { name: session.name, avatar: session.avatar, plan: session.plan || 'Local', limit: 1e9, usedToday: 0 } };
     },

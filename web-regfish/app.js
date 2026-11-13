@@ -57,6 +57,7 @@ function extOf(name) { const m = /\.([a-z0-9]{1,5})$/i.exec(name || ""); return 
 async function loadMe() {
   try { state.me = await api("me.php"); } catch (e) { state.me = { loggedIn: false, discordEnabled: false, guestJarsPerDay: 5 }; }
   const me = state.me, a = $("#account");
+  loginWall(me);
   if (me.loggedIn) {
     a.innerHTML = `<img src="${esc(me.user.avatar)}" alt=""><span class="who">${esc(me.user.name)}</span><button class="ghost small" id="logoutBtn">Log out</button>`;
     $("#logoutBtn").onclick = async () => { try { await post("logout.php"); } catch (e) {} loadMe(); };
@@ -226,6 +227,25 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const D = { on: false, depth: 0, raf: 0, parts: [], mx: innerWidth / 2, my: innerHeight / 2, cx: innerWidth / 2, cy: innerHeight / 2, lock: false, warnDrag: false, mode: "idle", hideT: 0, ctx: null, w: 0, h: 0, dpr: 1, color: "#fff", ok: "#3ddc97", warn: "#ff8a3d", seq: 0 };
 const MIME_EXT = [[/java-archive|x-java/, "JAR"], [/msdownload|ms-dos|msdos|portable-executable|x-dosexec|x-executable/, "EXE"], [/x-msi|ms-installer/, "MSI"], [/zip/, "ZIP"], [/python/, "PY"], [/powershell/, "PS1"], [/x-sh|shellscript/, "SH"], [/bat|x-msdos-batch/, "BAT"], [/javascript/, "JS"], [/vbscript/, "VBS"]];
 const isGuest = () => !!state.me && !state.me.loggedIn && !state.me.local;
+let wallPoll = null;
+function loginWall(me) {
+  const need = !!(me && me.local && me.requireLogin && !me.loggedIn);
+  let wall = $("#loginWall");
+  document.body.classList.toggle("needs-login", need);
+  if (!need) { if (wall) wall.remove(); clearInterval(wallPoll); wallPoll = null; return; }
+  if (!wall) {
+    wall = document.createElement("div");
+    wall.id = "loginWall";
+    wall.className = "login-wall";
+    wall.innerHTML = `<div class="login-card"><div class="login-logo"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l11 4v8c0 7-4.6 12-11 14C9.6 27 5 22 5 15V7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="15" r="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M19 18l4 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+      <h2>Log in to use RatScanner</h2><p>Sign in with your Discord account to start scanning. The login opens in your browser – come back here afterwards.</p>
+      <a class="btn-discord big" id="wallLogin" href="/api/login.php">${DISCORD_SVG}Log in with Discord</a><p class="login-wait muted small hidden" id="wallWait">Waiting for Discord… finish the login in your browser.</p>
+      ${me.invite ? `<p class="muted small">No account on our server yet? <a href="${esc(me.invite)}" target="_blank" rel="noopener noreferrer">Join our Discord</a></p>` : ""}</div>`;
+    document.body.appendChild(wall);
+    $("#wallLogin").addEventListener("click", () => { $("#wallWait").classList.remove("hidden"); });
+  }
+  if (!wallPoll) wallPoll = setInterval(() => { if (!document.hidden) loadMe(); }, 2500);
+}
 window.addEventListener("focus", () => { if (state.me && state.me.local) loadMe(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && state.me && state.me.local) loadMe(); });
 

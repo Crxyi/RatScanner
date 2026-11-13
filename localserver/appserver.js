@@ -25,6 +25,7 @@ const server = http.createServer((q, r) => {
     if (p === '/api/me.php') return J(discord.me());
     if (p === '/api/login.php') return discord.login(q, r);
     if (p === '/api/logout.php') return J(discord.logout());
+    if (discord.enabled && !discord.me().loggedIn && (p === '/api/quota.php' || p === '/api/fetch.php' || p === '/api/lookup.php')) return J({ error: 'Log in with Discord first.', needLogin: true }, 401);
     if (p === '/api/quota.php') return J({ ticket: '0'.repeat(32), left: 1e9 });
     if (p === '/api/fetch.php') {
       let j = {}; try { j = JSON.parse(body || '{}'); } catch (e) {}

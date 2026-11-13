@@ -226,6 +226,8 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const D = { on: false, depth: 0, raf: 0, parts: [], mx: innerWidth / 2, my: innerHeight / 2, cx: innerWidth / 2, cy: innerHeight / 2, lock: false, warnDrag: false, mode: "idle", hideT: 0, ctx: null, w: 0, h: 0, dpr: 1, color: "#fff", ok: "#3ddc97", warn: "#ff8a3d", seq: 0 };
 const MIME_EXT = [[/java-archive|x-java/, "JAR"], [/msdownload|ms-dos|msdos|portable-executable|x-dosexec|x-executable/, "EXE"], [/x-msi|ms-installer/, "MSI"], [/zip/, "ZIP"], [/python/, "PY"], [/powershell/, "PS1"], [/x-sh|shellscript/, "SH"], [/bat|x-msdos-batch/, "BAT"], [/javascript/, "JS"], [/vbscript/, "VBS"]];
 const isGuest = () => !!state.me && !state.me.loggedIn && !state.me.local;
+window.addEventListener("focus", () => { if (state.me && state.me.local) loadMe(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden && state.me && state.me.local) loadMe(); });
 
 function dfxText(t) {
   const el = $(".dfx-text");

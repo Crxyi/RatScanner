@@ -12,7 +12,7 @@ const dataDir = path.join(process.env.LOCALAPPDATA || os.homedir(), 'RatScanner'
 try { fs.mkdirSync(dataDir, { recursive: true }); } catch (e) {}
 const logFile = path.join(dataDir, 'ratscanner.log');
 const log = (...a) => { try { fs.appendFileSync(logFile, new Date().toISOString() + ' ' + a.join(' ') + '\n'); } catch (e) {} };
-const discord = createDiscord({ dataDir, config: desktopConfig, appUrl: () => appUrl, log });
+const discord = createDiscord({ dataDir, config: desktopConfig, appUrl: () => appUrl, openExternal: u => spawn('rundll32.exe', ['url.dll,FileProtocolHandler', u], { stdio: 'ignore', detached: true, windowsHide: true }).unref(), log });
 
 function readSite(rel) {
   if (sea) { try { return Buffer.from(sea.getAsset('site/' + rel)); } catch (e) { return null; } }

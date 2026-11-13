@@ -8,10 +8,16 @@ WORK="$HERE/dist/work"
 /bin/rm -rf "$HERE/dist"
 mkdir -p "$OUT/Contents/MacOS" "$OUT/Contents/Resources/server" "$OUT/Contents/Resources/site" "$WORK"
 
-swiftc -O -target arm64-apple-macos13 -o "$OUT/Contents/MacOS/RatScanner" "$HERE/main.swift" -framework Cocoa -framework WebKit
+swiftc -O -target arm64-apple-macos13 -o "$WORK/rs-arm64" "$HERE/main.swift" -framework Cocoa -framework WebKit
+if [ -n "$UNIVERSAL" ]; then
+  swiftc -O -target x86_64-apple-macos13 -o "$WORK/rs-x86_64" "$HERE/main.swift" -framework Cocoa -framework WebKit
+  lipo -create "$WORK/rs-arm64" "$WORK/rs-x86_64" -output "$OUT/Contents/MacOS/RatScanner"
+else
+  cp "$WORK/rs-arm64" "$OUT/Contents/MacOS/RatScanner"
+fi
 
 NODE="$(command -v node)"
-lipo "$NODE" -thin arm64 -output "$OUT/Contents/Resources/node" 2>/dev/null || cp "$NODE" "$OUT/Contents/Resources/node"
+if [ -n "$UNIVERSAL" ]; then cp "$NODE" "$OUT/Contents/Resources/node"; else lipo "$NODE" -thin arm64 -output "$OUT/Contents/Resources/node" 2>/dev/null || cp "$NODE" "$OUT/Contents/Resources/node"; fi
 chmod +x "$OUT/Contents/Resources/node"
 
 node "$PROJ/localserver/make-config.js"
@@ -56,6 +62,8 @@ PLIST
 
 codesign --force --deep --sign - "$OUT" >/dev/null 2>&1 || true
 /bin/rm -rf "$WORK"
+(cd "$HERE/dist" && ditto -c -k --keepParent RatScanner.app RatScanner-mac.zip)
+[ -n "$NO_INSTALL" ] && { echo "Built: $HERE/dist/RatScanner-mac.zip"; exit 0; }
 mkdir -p "$HOME/Applications"
 /bin/rm -rf "$HOME/Applications/RatScanner.app"
 cp -R "$OUT" "$HOME/Applications/RatScanner.app"

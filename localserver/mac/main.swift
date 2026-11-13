@@ -46,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             if let r = buffer.range(of: #"LISTENING (\d+)"#, options: .regularExpression), self?.baseURL == nil {
                 let port = buffer[r].split(separator: " ")[1]
                 let url = URL(string: "http://127.0.0.1:\(port)/")!
-                DispatchQueue.main.async { self?.baseURL = url; self?.web.load(URLRequest(url: url)) }
+                DispatchQueue.main.async { self?.baseURL = url; self?.web.load(URLRequest(url: url)); self?.ensureLoaded(tries: 6) }
             }
         }
         p.terminationHandler = { [weak self] proc in
@@ -64,6 +64,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         }
     }
 
+    func ensureLoaded(tries: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self = self, let b = self.baseURL, tries > 0 else { return }
+            self.web.evaluateJavaScript("!!document.querySelector('header.top')") { r, _ in
+                if (r as? Bool) != true { self.web.load(URLRequest(url: b)); self.ensureLoaded(tries: tries - 1) }
+            }
+        }
+    }
+
     var quitting = false
     func applicationWillTerminate(_ n: Notification) { quitting = true; server?.terminate() }
     func applicationShouldTerminateAfterLastWindowClosed(_ s: NSApplication) -> Bool { true }
@@ -71,11 +80,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     // Links to other sites open in the normal browser, never inside the app.
     func webView(_ w: WKWebView, decidePolicyFor a: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if a.shouldPerformDownload { decisionHandler(.download); return }
-        if let u = a.request.url, let h = u.host?.lowercased(), h == "127.0.0.1" || h == "discord.com" || h.hasSuffix(".discord.com") || h == "discordapp.com" || h.hasSuffix(".discordapp.com") || h == "hcaptcha.com" || h.hasSuffix(".hcaptcha.com") { decisionHandler(.allow); return }
+        if let u = a.request.url, u.host == "127.0.0.1" { decisionHandler(.allow); return }
         if let u = a.request.url, let base = baseURL, a.targetFrame?.isMainFrame ?? true, u.scheme == "http" || u.scheme == "https", u.host != base.host || u.port != base.port {
             NSWorkspace.shared.open(u); decisionHandler(.cancel); return
         }
         decisionHandler(.allow)
+    }
+    func webView(_ w: WKWebView, didFinish n: WKNavigation!) {
+        if let b = baseURL, w.url?.host != "127.0.0.1" { w.load(URLRequest(url: b)) }
+    }
+    func webView(_ w: WKWebView, didFailProvisionalNavigation n: WKNavigation!, withError e: Error) {
+        if let b = baseURL { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { if w.url?.host != "127.0.0.1" { w.load(URLRequest(url: b)) } } }
     }
     func webView(_ w: WKWebView, decidePolicyFor r: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         decisionHandler(r.canShowMIMEType ? .allow : .download)

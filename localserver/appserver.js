@@ -5,7 +5,7 @@ const dataDir = path.join(os.homedir(), 'Library', 'Application Support', 'RatSc
 try { fs.mkdirSync(dataDir, { recursive: true }); } catch (e) {}
 let config = {}; try { config = JSON.parse(fs.readFileSync(path.join(__dirname, 'desktop-config.json'), 'utf8')); } catch (e) {}
 let appUrl = '';
-const discord = createDiscord({ dataDir, config, appUrl: () => appUrl, log: (...a) => console.log(...a) });
+const discord = createDiscord({ dataDir, config, appUrl: () => appUrl, openExternal: u => require('child_process').spawn('/usr/bin/open', [u], { stdio: 'ignore', detached: true }).unref(), log: (...a) => console.log(...a) });
 const root = path.resolve(process.argv[2]);
 const port = +(process.argv[3] || 0);
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };

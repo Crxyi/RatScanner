@@ -6,7 +6,7 @@ const REDIRECT = 'http://127.0.0.1:' + CALLBACK_PORT + '/callback';
 const API = 'https://discord.com/api/v10';
 const b64url = b => b.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-function createDiscord({ dataDir, config, appUrl, log = () => {} }) {
+function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {} }) {
   const cfg = config || {};
   const file = path.join(dataDir, 'discord-session.json');
   let session = null, pending = null, cb = null;
@@ -41,11 +41,11 @@ function createDiscord({ dataDir, config, appUrl, log = () => {} }) {
       const s = http.createServer(async (q, r) => {
         const u = new URL(q.url, 'http://127.0.0.1');
         if (u.pathname !== '/callback') { r.writeHead(404); return r.end(); }
-        const back = appUrl() + '#/';
+        const back = null;
         const p = pending;
         if (!p || u.searchParams.get('state') !== p.state) return page(r, 400, 'Login expired', 'Please start the login again from RatScanner.', back);
         pending = null;
-        if (u.searchParams.get('error')) { setTimeout(stopCallback, 500); return page(r, 200, 'Login cancelled', 'Taking you back to RatScanner…', back); }
+        if (u.searchParams.get('error')) { setTimeout(stopCallback, 500); return page(r, 200, 'Login cancelled', 'You can close this tab and go back to RatScanner.', back); }
         try {
           const body = new URLSearchParams({ client_id: cfg.clientId, grant_type: 'authorization_code', code: u.searchParams.get('code') || '', redirect_uri: REDIRECT, code_verifier: p.verifier });
           const tr = await fetch(API + '/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body, signal: AbortSignal.timeout(10000) });
@@ -57,7 +57,7 @@ function createDiscord({ dataDir, config, appUrl, log = () => {} }) {
           session = { id: me.id, name: me.global_name || me.username, username: me.username, avatar: me.avatar ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64` : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(me.id) >> 22n) % 6n)}.png`, roles, plan: planOf(roles), since: Date.now(), refresh: tok.refresh_token || null };
           save();
           log('discord login', session.username);
-          page(r, 200, 'Logged in as ' + session.name.replace(/[<>&"]/g, ''), 'Taking you back to RatScanner…', back);
+          page(r, 200, 'Logged in as ' + session.name.replace(/[<>&"]/g, ''), 'You can close this tab and go back to RatScanner.', back);
         } catch (e) {
           log('discord login failed', e.message);
           page(r, 500, 'Login failed', String(e.message).replace(/[<>&"]/g, ''), back);
@@ -84,6 +84,7 @@ function createDiscord({ dataDir, config, appUrl, log = () => {} }) {
       setTimeout(() => { if (pending && Date.now() - pending.at > 9 * 60e3) { pending = null; stopCallback(); } }, 10 * 60e3);
       const scope = cfg.guildId ? 'identify guilds.members.read' : 'identify';
       const u = 'https://discord.com/oauth2/authorize?' + new URLSearchParams({ response_type: 'code', client_id: cfg.clientId, scope, redirect_uri: REDIRECT, state: pending.state, code_challenge: b64url(crypto.createHash('sha256').update(verifier).digest()), code_challenge_method: 'S256' });
+      if (openExternal) { try { openExternal(u); } catch (e) { log('open browser failed', e.message); } res.writeHead(302, { location: '/#/', 'cache-control': 'no-store' }); return res.end(); }
       res.writeHead(302, { location: u, 'cache-control': 'no-store' });
       res.end();
     },

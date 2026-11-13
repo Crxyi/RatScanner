@@ -1,0 +1,49 @@
+{
+  "families": [
+    {
+      "name": "fractureiser",
+      "severity": "critical",
+      "description": "Worm from 2023 that spread through infected CurseForge/Bukkit projects, infected mods/plugins on the PC, stole browser/Discord/Minecraft data and set up persistence.",
+      "strings": [
+        "85.217.144.130",
+        "107.189.3.101",
+        "files-8ie.pages.dev",
+        "skyrage.de",
+        "connect.skyrage.de",
+        "files.skyrage.de",
+        "dl.skyrage.de"
+      ],
+      "classes": [
+        "dev/neko/nekoclient/",
+        "dev/neko/nekoinjector/",
+        "dev/neko/nekoclient",
+        "dev/neko/nekoinjector"
+      ]
+    },
+    {
+      "name": "SilentNet",
+      "severity": "critical",
+      "description": "SilentNet (silentnet.st) is a Minecraft RAT kit. Its loader gets injected into real mods, steals the Minecraft session token, fetches its server address from a blockchain (Polygon), downloads a hidden Python runtime and starts a stealer in the background.",
+      "strings": [
+        "silentnet.st",
+        "silentnet",
+        "thisisafalsepositive.st",
+        "ntprofileindex",
+        "/shard/prefiremc",
+        "/shard/submitminecraftlog",
+        "prefireid",
+        "x-edge-cache-revalidate",
+        "spawning stealer",
+        "_stealer.log",
+        "detached process started",
+        "jre-embedded",
+        "0x9c0a507300fd902787bb193d80fca5ce6e1bff9a",
+        "9c0a507300fd902787bb193d80fca5ce6e1bff9a",
+        "\"env\":\"doubleclick\"",
+        "executionenvironment\":\""
+      ],
+      "classes": []
+    }
+  ],
+  "hashes": []
+}

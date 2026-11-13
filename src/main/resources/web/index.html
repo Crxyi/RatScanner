@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RatScanner</title>
+<meta name="description" content="Scan Minecraft mods, plugins, clients and programs for RATs, stealers, loaders, /pay stealers and backdoors – with Vineflower, CFR and ASM. Files are never executed.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css?v=7">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l11 4v8c0 7-4.6 12-11 14C9.6 27 5 22 5 15V7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="15" r="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M19 18l4 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+    <span>RatScanner</span>
+  </a>
+  <nav>
+    <a href="#/">Scan</a>
+    <a href="#/plans">Plans</a>
+    <a href="#/leaderboard">Leaderboard</a>
+    <a href="#/supporters">Supporters</a>
+    <a href="#/how">How it works</a>
+    <a id="navDiscord" class="hidden" target="_blank" rel="noopener noreferrer">Discord</a>
+    <span id="account" class="account"></span>
+    <button id="themeBtn" class="ghost icon" aria-label="Toggle color scheme">◐</button>
+  </nav>
+</header>
+
+<main id="home" class="view">
+  <section class="hero reveal">
+    <p class="kicker">Mods · Plugins · Clients · Programs</p>
+    <h1>Know what a file does<br>before you run it.</h1>
+    <p class="lead">Drop a <code>.jar</code>, <code>.exe</code> or script. Every class is taken apart with <b>Vineflower</b>, <b>CFR</b> and <b>ASM bytecode analysis</b> and checked for RATs, token stealers, loaders, miners, /pay stealers, backdoors and malware that gets installed later.</p>
+    <p class="safe"><span class="dot"></span>Files are <b>never executed</b> – not on our server and not on your PC. We only read the bytes.</p>
+  </section>
+
+  <section class="scanbox">
+    <label id="drop" class="drop" for="file">
+      <input id="file" type="file">
+      <div class="drop-ico" aria-hidden="true">
+        <svg viewBox="0 0 48 48"><path d="M14 6h14l10 10v26H14z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M28 6v10h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 36V22m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="drop-title">Drop a file here</div>
+      <div class="drop-sub">or click to choose · .jar, .exe, .dll, .bat, .ps1, .py … · max. 100 MB</div>
+    </label>
+    <div class="opts">
+      <label class="opt"><input id="full" type="checkbox" checked> Full decompile (Vineflower + CFR) <span class="muted">– more thorough, slower for big clients</span></label>
+      <div id="quota" class="quota"></div>
+      <div id="cfCheck" class="turnstile"></div>
+    </div>
+
+    <div class="side">
+      <form id="urlForm" class="mini">
+        <div class="mini-h">Scan by URL</div>
+        <div class="row"><input id="url" type="url" placeholder="https://cdn.modrinth.com/…/mod.jar" required><button>Fetch &amp; scan</button></div>
+        <p class="muted small">Downloaded server-side. Private, loopback and cloud metadata addresses are refused.</p>
+      </form>
+      <form id="hashForm" class="mini">
+        <div class="mini-h">Check a hash</div>
+        <div class="row"><input id="hash" placeholder="SHA-256" pattern="[0-9a-fA-F]{64}" required><button>Look up</button></div>
+        <p class="muted small">Shows whether the file was scanned here before and what the verdict was.</p>
+      </form>
+    </div>
+    <div id="homeMsg" class="msg hidden"></div>
+  </section>
+
+  <section class="grid3">
+    <div class="card"><h3>Three engines</h3><p>Vineflower and CFR give two independent decompilations – where one fails, the other helps. ASM reads the raw bytecode, which no obfuscator can hide.</p></div>
+    <div class="card"><h3>Hidden strings</h3><p>Base64, hex, reversed, byte-array and character-by-character encrypted strings are rebuilt by emulation before they are checked – the trick SilentNet uses to hide its servers.</p></div>
+    <div class="card"><h3>Behaviour, not names</h3><p>Combination rules detect what code does: download + run, read token + webhook, chat event + setOp, send chat + /pay, relaunch as hidden process – even when split over many classes.</p></div>
+  </section>
+  <section class="cats">
+    <span>Session/token stealers</span><span>SilentNet</span><span>Discord grabbers</span><span>Browser passwords</span><span>Wallet stealers &amp; clippers</span><span>Remote loaders</span><span>Droppers / stage 2</span><span>Injected mods</span><span>JAR infectors</span><span>Blockchain C2</span><span>Crypto miners</span><span>Force-OP backdoors</span><span>Auto /pay</span><span>Keyloggers</span><span>Reverse shells</span><span>Autostart persistence</span><span>Defender exclusions</span><span>Packed .exe files</span><span>Process injection</span><span>fractureiser</span>
+  </section>
+</main>
+
+<main id="leaderboard" class="view hidden">
+  <section class="hero small-hero">
+    <p class="kicker">Community</p>
+    <h1>Leaderboard</h1>
+    <p class="lead">Who scanned the most different files. Log in with Discord and every new file you scan counts.</p>
+  </section>
+  <section class="panel lb-panel">
+    <div id="lbMe" class="lb-me"></div>
+    <ol id="lbList" class="lb"></ol>
+  </section>
+</main>
+
+<main id="plans" class="view hidden">
+  <section class="hero small-hero center">
+    <h1>Plans</h1>
+    <p class="lead">Scanning in the browser stays free. A plan gives you an API key to scan from your own scripts and bots, priority in the queue, a role in our Discord and your name on the Supporters page.</p>
+  </section>
+  <section class="plan-grid">
+    <article class="plan">
+      <h3>Starter</h3>
+      <p class="plan-sub">An API key for your own scripts and your name among the supporters.</p>
+      <div class="price"><b>€4.99</b><span>/ month</span></div>
+      <div class="price-alt">or €24.99 once – lifetime</div>
+      <a class="plan-btn" data-plan="Starter">Get Starter</a>
+      <ul><li><b id="lim-starter">100</b> API scans per day</li><li>Starter role in the Discord</li><li>Listed on the Supporters page</li></ul>
+    </article>
+    <article class="plan featured">
+      <span class="badge">Most popular</span>
+      <h3>Pro</h3>
+      <p class="plan-sub">More API budget, your scans skip the queue, higher on the supporters list.</p>
+      <div class="price"><b>€19.99</b><span>/ month</span></div>
+      <div class="price-alt">or €49.99 once – lifetime</div>
+      <a class="plan-btn primary" data-plan="Pro">Get Pro</a>
+      <ul><li>Everything in Starter</li><li><b id="lim-pro">500</b> API scans per day</li><li>Priority scanning – your files are scanned first</li><li>Bytecode deobfuscation view <span class="soon">Soon</span></li><li>Higher placement on the Supporters page</li></ul>
+    </article>
+    <article class="plan">
+      <h3>Enterprise</h3>
+      <p class="plan-sub">The full budget and a real person looking at files that need a closer look.</p>
+      <div class="price"><b>€49.99</b><span>/ month</span></div>
+      <div class="price-alt">or €199.99 once – lifetime</div>
+      <a class="plan-btn" data-plan="Enterprise">Get Enterprise</a>
+      <ul><li>Everything in Pro</li><li><b id="lim-enterprise">1,000</b> API scans per day</li><li>Manual deep analysis of a file by our team on request</li><li>Top placement on the Supporters page</li></ul>
+    </article>
+  </section>
+  <section class="panel howto">
+    <h2>How to get a plan</h2>
+    <p>There is no checkout on the website – plans are bought in our <a class="discord-link" target="_blank" rel="noopener noreferrer">Discord server</a>. <span id="plansContact"></span> As soon as you have the role, the website picks it up automatically (within 10 minutes, or right away when you log in again). Payment is in EUR, monthly or once for lifetime.</p>
+  </section>
+  <section class="panel howto" id="apiBox">
+    <h2>Your API key</h2>
+    <div id="apiAccount"></div>
+  </section>
+  <section class="panel howto">
+    <h2>API</h2>
+    <p>Send a file with your key in the <code>Authorization</code> header, then poll the job until it is done:</p>
+    <pre class="ev">curl -X POST -H "Authorization: Bearer rsk_…" \
+  --data-binary @mod.jar "<span class="origin"></span>/api/scan?name=mod.jar"
+# → {"id":"…"}
+curl "<span class="origin"></span>/api/job/ID"
+# → {"status":"done","report":{"verdict":"MALICIOUS","score":100,"findings":[…]}}</pre>
+    <p class="muted small">Also available: <code>POST /api/scan-url</code> with <code>{"url":"…"}</code>, <code>GET /api/hash/SHA256</code>, <code>GET /api/job/ID/report.json</code>. API scans count against the daily budget of your plan; accounts without a plan can create a key but have no budget.</p>
+  </section>
+</main>
+
+<main id="supporters" class="view hidden">
+  <section class="hero small-hero">
+    <p class="kicker">Thank you</p>
+    <h1>Supporters</h1>
+    <p class="lead">Everyone who keeps RatScanner running with a plan.</p>
+  </section>
+  <section class="panel lb-panel">
+    <ol id="supList" class="lb"></ol>
+  </section>
+</main>
+
+<main id="how" class="view hidden">
+  <section class="prose">
+    <h1>How the scan works</h1>
+    <ol>
+      <li><b>Unpacking.</b> JARs are read exactly like the JVM reads them. Nested JARs (Fabric jar-in-jar, shading) are scanned up to 3 levels deep. Disguised classes, hidden EXE/DLL files, scripts and encrypted blobs are detected.</li>
+      <li><b>ASM bytecode.</b> Every instruction of every method is read: calls (Runtime.exec, URLClassLoader, defineClass, Session.getAccessToken, sendChatCommand, setOp …), constants, invokedynamic arguments.</li>
+      <li><b>String emulation.</b> A small emulator rebuilds strings that are hidden with Base64, hex, byte arrays or character arithmetic like <code>(char)(47932 - 47815)</code>, then checks them again.</li>
+      <li><b>Vineflower + CFR.</b> Suspicious and own classes are decompiled with both decompilers and the source is checked again. Everything else is decompiled on demand when you open it.</li>
+      <li><b>Programs (.exe, .dll, ELF, Mach-O).</b> PE headers, sections, imports and packers (UPX, Themida, VMProtect, PyInstaller) are analysed, all ASCII and UTF-16 strings are checked, and JARs embedded in programs are unpacked and scanned with all Java engines.</li>
+      <li><b>Combinations.</b> Single capabilities are often harmless – the combination is what matters. Over 35 rules link capabilities inside a class and across the whole file.</li>
+      <li><b>Verdict.</b> Critical findings → <span class="v v-MALICIOUS">Malicious</span>, strong signs → <span class="v v-SUSPICIOUS">Suspicious</span>, weak signs → <span class="v v-CAUTION">Caution</span>, otherwise <span class="v v-CLEAN">Clean</span>.</li>
+    </ol>
+    <h2>Never executed</h2>
+    <p>Uploaded files are only ever read as bytes. The server never runs them, never loads them as Java classes and never offers them for download – so the scan itself can never infect anyone.</p>
+    <h2>Limits</h2>
+    <p>A static scan can never prove a file is safe. Heavily obfuscated code, code that is downloaded later or brand new tricks can slip through. Only run files from sources you trust.</p>
+  </section>
+</main>
+
+<main id="progress" class="view hidden">
+  <section class="progress-card">
+    <div class="scanfx" aria-hidden="true">
+      <div class="scanfx-ring"></div>
+      <div class="scanfx-file"><span id="pExt">JAR</span><div class="scanfx-beam"></div></div>
+    </div>
+    <div class="pfile" id="pFile"></div>
+    <div class="pstage" id="pStage">Uploading…</div>
+    <div class="bar"><div id="pBar"></div></div>
+    <ul class="steps" id="pSteps">
+      <li data-k="Unpacking|Binary">Unpacking &amp; nested archives</li>
+      <li data-k="ASM">ASM bytecode analysis</li>
+      <li data-k="Obfuscation">Obfuscation &amp; resources</li>
+      <li data-k="Decompiling">Vineflower + CFR</li>
+      <li data-k="Source">Source analysis</li>
+      <li data-k="Scoring">Scoring</li>
+    </ul>
+  </section>
+</main>
+
+<main id="report" class="view hidden"></main>
+
+<div id="dragfx" class="dragfx hidden" aria-hidden="true">
+  <div class="dragfx-core">
+    <div class="dragfx-radar"></div>
+    <div class="dragfx-ring r1"></div>
+    <div class="dragfx-ring r2"></div>
+    <div class="dragfx-ring r3"></div>
+    <div class="dragfx-file"><svg viewBox="0 0 48 48"><path d="M14 6h14l10 10v26H14z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M28 6v10h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg><span class="dragfx-scan"></span></div>
+  </div>
+  <div class="dragfx-text">Drop to scan</div>
+  <div class="dragfx-sub">Static analysis only – the file is never executed</div>
+</div>
+
+<div id="viewer" class="viewer hidden" role="dialog" aria-label="Code view">
+  <aside class="tree">
+    <div class="tree-head">
+      <input id="treeFilter" placeholder="Filter classes…">
+      <label class="opt small"><input id="onlyFlagged" type="checkbox" checked> flagged only</label>
+    </div>
+    <div id="treeList" class="tree-list"></div>
+  </aside>
+  <section class="code-pane">
+    <div class="code-head">
+      <div class="crumb" id="crumb"></div>
+      <div class="tabs" id="tabs">
+        <button data-e="vineflower" class="on">Vineflower</button>
+        <button data-e="cfr">CFR</button>
+        <button data-e="asm">Bytecode (ASM)</button>
+      </div>
+      <div class="hitnav"><button id="prevHit" title="Previous finding">↑</button><span id="hitInfo"></span><button id="nextHit" title="Next finding">↓</button></div>
+      <button id="closeViewer" class="ghost" title="Close">✕</button>
+    </div>
+    <div id="classFindings" class="class-findings"></div>
+    <pre id="code" class="code"></pre>
+  </section>
+</div>
+
+<footer class="foot">
+  <span>RatScanner – static analysis, nothing is ever executed.</span>
+  <span id="discordInvite"></span>
+  <span id="stats" class="muted"></span>
+</footer>
+<script src="/app.js?v=7"></script>
+</body>
+</html>

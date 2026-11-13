@@ -1,0 +1,7 @@
+build/
+.gradle/
+data/
+ratscanner.env
+*.env
+.DS_Store
+web-regfish/api/config.php

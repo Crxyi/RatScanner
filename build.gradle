@@ -1,0 +1,21 @@
+plugins { id 'application' }
+repositories { mavenCentral() }
+dependencies {
+    implementation 'org.vineflower:vineflower:1.11.1'
+    implementation 'org.benf:cfr:0.152'
+    implementation 'org.ow2.asm:asm:9.9'
+    implementation 'org.ow2.asm:asm-tree:9.9'
+    implementation 'org.ow2.asm:asm-util:9.9'
+    implementation 'org.ow2.asm:asm-analysis:9.9'
+    implementation 'com.google.code.gson:gson:2.11.0'
+}
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+application { mainClass = 'org.ratscanner.Main'; applicationDefaultJvmArgs = ['-Xmx2g'] }
+tasks.register('fatJar', Jar) {
+    archiveFileName = 'ratscanner.jar'
+    manifest { attributes 'Main-Class': 'org.ratscanner.Main' }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from sourceSets.main.output
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}

@@ -6,3 +6,4 @@ ratscanner.env
 .DS_Store
 web-regfish/api/config.php
 localserver/**/dist/
+localserver/desktop-config.json

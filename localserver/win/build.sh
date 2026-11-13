@@ -11,6 +11,11 @@ OUT="$HERE/dist"
 { printf 'const __mocksite = (function () { const module = { exports: {} };\n'
   cat "$PROJ/localserver/mocksite.js"
   printf '\nreturn module.exports; })();\n'
+  printf 'const __discordmod = (function () { const module = { exports: {} };\n'
+  cat "$PROJ/localserver/discord.js"
+  printf '\nreturn module.exports; })();\n'
+  node "$PROJ/localserver/make-config.js" >&2
+  printf 'const __desktopConfig = %s;\n' "$(cat "$PROJ/localserver/desktop-config.json")"
   cat "$HERE/main.js"; } > "$OUT/bundle.js"
 
 node -e '

@@ -1,10 +1,16 @@
 // Server for the RatScanner Mac app: only reachable from this Mac (127.0.0.1), no login, no limits.
-const http = require('http'), fs = require('fs'), path = require('path');
+const http = require('http'), fs = require('fs'), path = require('path'), os = require('os');
+const { createDiscord } = require(path.join(__dirname, 'discord.js'));
+const dataDir = path.join(os.homedir(), 'Library', 'Application Support', 'RatScanner');
+try { fs.mkdirSync(dataDir, { recursive: true }); } catch (e) {}
+let config = {}; try { config = JSON.parse(fs.readFileSync(path.join(__dirname, 'desktop-config.json'), 'utf8')); } catch (e) {}
+let appUrl = '';
+const discord = createDiscord({ dataDir, config, appUrl: () => appUrl, log: (...a) => console.log(...a) });
 const root = path.resolve(process.argv[2]);
 const port = +(process.argv[3] || 0);
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
-const LOCAL_CSS = `nav a[href="#/plans"], nav a[href="#/leaderboard"], nav a[href="#/supporters"], #navDiscord, #account, #cfCheck, #quota, .gate { display: none !important; }`;
-const STRICT = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'";
+const LOCAL_CSS = `nav a[href="#/plans"], nav a[href="#/leaderboard"], nav a[href="#/supporters"], #cfCheck, #quota, .gate { display: none !important; }`;
+const STRICT = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'";
 const ENGINE = "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'";
 let site = null;
 const server = http.createServer((q, r) => {
@@ -16,7 +22,9 @@ const server = http.createServer((q, r) => {
   q.on('end', () => {
     const body = Buffer.concat(chunks).toString();
     const J = (o, c = 200) => { r.writeHead(c, { 'content-type': 'application/json', 'cache-control': 'no-store' }); r.end(JSON.stringify(o)); };
-    if (p === '/api/me.php') return J({ loggedIn: true, discordEnabled: false, user: { name: 'This Mac', avatar: '/favicon.svg', plan: 'Local', limit: 1e9, usedToday: 0 } });
+    if (p === '/api/me.php') return J(discord.me());
+    if (p === '/api/login.php') return discord.login(q, r);
+    if (p === '/api/logout.php') return J(discord.logout());
     if (p === '/api/quota.php') return J({ ticket: '0'.repeat(32), left: 1e9 });
     if (p === '/api/fetch.php') {
       let j = {}; try { j = JSON.parse(body || '{}'); } catch (e) {}
@@ -38,6 +46,6 @@ const server = http.createServer((q, r) => {
     fs.createReadStream(f).pipe(r);
   });
 });
-server.listen(port, '127.0.0.1', () => { console.log('LISTENING ' + server.address().port); });
+server.listen(port, '127.0.0.1', () => { appUrl = 'http://127.0.0.1:' + server.address().port + '/'; console.log('LISTENING ' + server.address().port); });
 process.stdin.on('end', () => process.exit(0));
 process.stdin.resume();

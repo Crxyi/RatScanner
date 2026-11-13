@@ -71,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     // Links to other sites open in the normal browser, never inside the app.
     func webView(_ w: WKWebView, decidePolicyFor a: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if a.shouldPerformDownload { decisionHandler(.download); return }
+        if let u = a.request.url, let h = u.host?.lowercased(), h == "127.0.0.1" || h == "discord.com" || h.hasSuffix(".discord.com") || h == "discordapp.com" || h.hasSuffix(".discordapp.com") || h == "hcaptcha.com" || h.hasSuffix(".hcaptcha.com") { decisionHandler(.allow); return }
         if let u = a.request.url, let base = baseURL, a.targetFrame?.isMainFrame ?? true, u.scheme == "http" || u.scheme == "https", u.host != base.host || u.port != base.port {
             NSWorkspace.shared.open(u); decisionHandler(.cancel); return
         }

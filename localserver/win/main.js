@@ -1,14 +1,18 @@
 // RatScanner for Windows: a local-only scanner. Serves the bundled site on 127.0.0.1 and opens it in an app window.
-/* global __mocksite */
+/* global __mocksite, __discordmod, __desktopConfig */
 const http = require('http'), path = require('path'), fs = require('fs'), os = require('os');
 const { spawn } = require('child_process');
 const sea = (() => { try { const s = require('node:sea'); return s.isSea() ? s : null; } catch (e) { return null; } })();
 const DEV_ROOT = process.env.RATSCANNER_SITE;
+const { createDiscord } = typeof __discordmod !== 'undefined' ? __discordmod : require('../discord.js');
+const desktopConfig = typeof __desktopConfig !== 'undefined' ? __desktopConfig : {};
+let appUrl = '';
 
 const dataDir = path.join(process.env.LOCALAPPDATA || os.homedir(), 'RatScanner');
 try { fs.mkdirSync(dataDir, { recursive: true }); } catch (e) {}
 const logFile = path.join(dataDir, 'ratscanner.log');
 const log = (...a) => { try { fs.appendFileSync(logFile, new Date().toISOString() + ' ' + a.join(' ') + '\n'); } catch (e) {} };
+const discord = createDiscord({ dataDir, config: desktopConfig, appUrl: () => appUrl, log });
 
 function readSite(rel) {
   if (sea) { try { return Buffer.from(sea.getAsset('site/' + rel)); } catch (e) { return null; } }
@@ -19,8 +23,8 @@ function readSite(rel) {
 }
 
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
-const LOCAL_CSS = 'nav a[href="#/plans"], nav a[href="#/leaderboard"], nav a[href="#/supporters"], #navDiscord, #account, #cfCheck, #quota, .gate { display: none !important; }';
-const STRICT = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'";
+const LOCAL_CSS = 'nav a[href="#/plans"], nav a[href="#/leaderboard"], nav a[href="#/supporters"], #cfCheck, #quota, .gate { display: none !important; }';
+const STRICT = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'";
 const ENGINE = "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'";
 let lastHit = Date.now();
 
@@ -34,7 +38,9 @@ const server = http.createServer((q, r) => {
   q.on('data', d => { size += d.length; if (size < 1e6) chunks.push(d); });
   q.on('end', () => {
     const J = (o, c = 200) => { r.writeHead(c, { 'content-type': 'application/json', 'cache-control': 'no-store' }); r.end(JSON.stringify(o)); };
-    if (p === '/api/me.php') return J({ loggedIn: true, discordEnabled: false, user: { name: 'This PC', avatar: '/favicon.svg', plan: 'Local', limit: 1e9, usedToday: 0 } });
+    if (p === '/api/me.php') return J(discord.me());
+    if (p === '/api/login.php') return discord.login(q, r);
+    if (p === '/api/logout.php') return J(discord.logout());
     if (p === '/api/quota.php') return J({ ticket: '0'.repeat(32), left: 1e9 });
     if (p === '/api/fetch.php') {
       let j = {}; try { j = JSON.parse(Buffer.concat(chunks).toString() || '{}'); } catch (e) {}
@@ -65,7 +71,7 @@ function findBrowser() {
 }
 
 server.listen(0, '127.0.0.1', () => {
-  const url = 'http://127.0.0.1:' + server.address().port + '/';
+  const url = appUrl = 'http://127.0.0.1:' + server.address().port + '/';
   log('listening', url);
   if (process.platform !== 'win32') { console.log('RatScanner running at ' + url); return; }
   const browser = findBrowser();

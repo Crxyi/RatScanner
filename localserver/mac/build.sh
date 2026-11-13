@@ -14,7 +14,8 @@ NODE="$(command -v node)"
 lipo "$NODE" -thin arm64 -output "$OUT/Contents/Resources/node" 2>/dev/null || cp "$NODE" "$OUT/Contents/Resources/node"
 chmod +x "$OUT/Contents/Resources/node"
 
-cp "$PROJ/localserver/appserver.js" "$PROJ/localserver/mocksite.js" "$OUT/Contents/Resources/server/"
+node "$PROJ/localserver/make-config.js"
+cp "$PROJ/localserver/appserver.js" "$PROJ/localserver/mocksite.js" "$PROJ/localserver/discord.js" "$PROJ/localserver/desktop-config.json" "$OUT/Contents/Resources/server/"
 rsync -a --exclude api --exclude .htaccess "$PROJ/web-regfish/" "$OUT/Contents/Resources/site/"
 
 qlmanage -t -s 1024 -o "$WORK" "$HERE/icon.svg" >/dev/null 2>&1

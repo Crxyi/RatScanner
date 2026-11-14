@@ -63,7 +63,8 @@ const server = http.createServer((q, r) => {
     const body = readSite(rel);
     if (!body) { r.writeHead(404); return r.end(); }
     const name = path.posix.basename(rel), engine = ['decompiler.html', 'host.js', 'worker.js'].includes(name);
-    const headers = { 'content-type': types[path.extname(rel)] || 'application/octet-stream', 'content-security-policy': engine ? ENGINE : STRICT, 'x-content-type-options': 'nosniff', 'cache-control': 'no-cache' };
+    const headers = { 'content-type': types[path.extname(rel)] || 'application/octet-stream', 'content-security-policy': engine ? ENGINE : STRICT, 'x-content-type-options': 'nosniff', 'cache-control': 'no-store' };
+    if (name === 'index.html') headers['clear-site-data'] = '"cache"';
     r.writeHead(200, headers);
     r.end(name === 'index.html' ? body.toString('utf8').replace('</head>', '<link rel="stylesheet" href="/local.css"><script src="/heartbeat.js"></script></head>') : body);
   });
@@ -82,7 +83,7 @@ server.listen(0, '127.0.0.1', () => {
   if (process.platform !== 'win32') { console.log('RatScanner running at ' + url); return; }
   const browser = findBrowser();
   if (browser) {
-    const profile = path.join(dataDir, 'Window');
+    const profile = path.join(dataDir, 'AppWindow');
     const child = spawn(browser, ['--app=' + url, '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check', '--window-size=1280,860', '--disable-features=Translate'], { stdio: 'ignore', windowsHide: false });
     child.on('exit', code => log('browser launcher exited', code));
     child.on('error', e => { log('browser error', e.message); openDefault(url); });

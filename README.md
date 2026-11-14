@@ -6,7 +6,7 @@ Web scanner for Minecraft mods, plugins, clients and programs. `.jar` files are 
 
 ## Desktop apps (local only)
 
-**Windows:** download `RatScanner.exe` from the [latest release](https://github.com/Crxyi/RatScanner/releases/latest) and double-click it. It runs the scanner on `127.0.0.1` only and opens it in an app window (Edge/Chrome app mode) – no login, no limits, nothing is uploaded. The file is not code-signed, so Windows SmartScreen may show "Windows protected your PC" → *More info* → *Run anyway*. Built with `localserver/win/build.sh` (Node.js single executable application).
+**Windows:** download `RatScanner.exe` from the [latest release](https://github.com/Crxyi/RatScanner/releases/latest) and double-click it. It runs the scanner on `127.0.0.1` only and opens it in an app window (Edge/Chrome app mode) – log in with Discord once, no limits, nothing is uploaded. The file is not code-signed, so Windows SmartScreen may show "Windows protected your PC" → *More info* → *Run anyway*. Built with `localserver/win/build.sh` (Node.js single executable application).
 
 **macOS:** download `RatScanner-mac.zip` from the [latest release](https://github.com/Crxyi/RatScanner/releases/latest) (Apple Silicon + Intel, macOS 13+), move `RatScanner.app` to Applications and open it with right-click → *Open* the first time (not notarized). Build it yourself with `UNIVERSAL=1 localserver/mac/build.sh`.
 

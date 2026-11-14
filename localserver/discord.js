@@ -54,7 +54,12 @@ function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {} }
           const me = await api('/users/@me', tok.access_token);
           let roles = [];
           if (cfg.guildId && String(tok.scope || '').includes('guilds.members.read')) { try { roles = (await api('/users/@me/guilds/' + cfg.guildId + '/member', tok.access_token)).roles || []; } catch (e) {} }
-          session = { id: me.id, name: me.global_name || me.username, username: me.username, avatar: me.avatar ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64` : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(me.id) >> 22n) % 6n)}.png`, roles, plan: planOf(roles), since: Date.now(), refresh: tok.refresh_token || null };
+          let joined = null;
+          if (cfg.joinUrl && String(tok.scope || '').includes('guilds.join')) {
+            try { const jr = await fetch(cfg.joinUrl.replace(/\/$/, '') + '/join', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ access_token: tok.access_token }), signal: AbortSignal.timeout(15000) }); const jb = await jr.json().catch(() => ({})); joined = jr.ok ? (jb.joined ? 'joined' : 'member') : 'failed: ' + (jb.error || jr.status); log('discord join', joined); } catch (e) { joined = 'failed: ' + e.message; log('discord join failed', e.message); }
+            if (joined === 'joined' && cfg.guildId) { try { roles = (await api('/users/@me/guilds/' + cfg.guildId + '/member', tok.access_token)).roles || []; } catch (e) {} }
+          }
+          session = { joined, id: me.id, name: me.global_name || me.username, username: me.username, avatar: me.avatar ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64` : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(me.id) >> 22n) % 6n)}.png`, roles, plan: planOf(roles), since: Date.now(), refresh: tok.refresh_token || null };
           save();
           log('discord login', session.username);
           page(r, 200, 'Logged in as ' + session.name.replace(/[<>&"]/g, ''), 'You can close this tab and go back to RatScanner.', back);
@@ -82,7 +87,7 @@ function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {} }
       const verifier = b64url(crypto.randomBytes(48));
       pending = { state: b64url(crypto.randomBytes(18)), verifier, at: Date.now() };
       setTimeout(() => { if (pending && Date.now() - pending.at > 9 * 60e3) { pending = null; stopCallback(); } }, 10 * 60e3);
-      const scope = cfg.guildId ? 'identify guilds.members.read' : 'identify';
+      const scope = ['identify', cfg.guildId ? 'guilds.members.read' : '', cfg.joinUrl && cfg.guildId ? 'guilds.join' : ''].filter(Boolean).join(' ');
       const u = 'https://discord.com/oauth2/authorize?' + new URLSearchParams({ response_type: 'code', client_id: cfg.clientId, scope, redirect_uri: REDIRECT, state: pending.state, code_challenge: b64url(crypto.createHash('sha256').update(verifier).digest()), code_challenge_method: 'S256' });
       if (openExternal) { try { openExternal(u); } catch (e) { log('open browser failed', e.message); } res.writeHead(302, { location: '/#/', 'cache-control': 'no-store' }); return res.end(); }
       res.writeHead(302, { location: u, 'cache-control': 'no-store' });

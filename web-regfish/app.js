@@ -249,85 +249,29 @@ function loginWall(me) {
 window.addEventListener("focus", () => { if (state.me && state.me.local) loadMe(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && state.me && state.me.local) loadMe(); });
 
-function dfxText(t) {
-  const el = $(".dfx-text");
-  el.textContent = "";
-  [...t].forEach((c, i) => { const s = document.createElement("span"); s.className = "ch"; s.textContent = c === " " ? " " : c; s.style.animationDelay = (reduceMotion ? 0 : i * 16) + "ms"; el.appendChild(s); });
-}
-function dfxChip(t) { $(".dfx-chip-t").textContent = t; }
+function dfxText(t) { $(".dfx-text").textContent = t; }
+function dfxChip(t) { $(".dfx-chip-t").textContent = t || ""; }
 function dfxMode(m) {
   D.mode = m;
-  dfx.classList.toggle("lock", m === "lock");
   dfx.classList.toggle("warn", m === "warn" || (D.warnDrag && m !== "dropped"));
   dfx.classList.toggle("dropped", m === "dropped");
 }
-function dfxMeasure() {
-  const r = $(".dfx-target").getBoundingClientRect();
-  D.cx = r.left + r.width / 2; D.cy = r.top + r.height / 2;
-  const cs = getComputedStyle(document.documentElement);
-  D.color = cs.getPropertyValue("--fg").trim() || "#fff";
-  D.ok = cs.getPropertyValue("--ok").trim() || "#3ddc97";
-  D.warn = cs.getPropertyValue("--high").trim() || "#ff8a3d";
-  const c = $(".dfx-canvas");
-  D.dpr = Math.min(2, devicePixelRatio || 1); D.w = innerWidth; D.h = innerHeight;
-  c.width = D.w * D.dpr; c.height = D.h * D.dpr;
-  D.ctx = c.getContext("2d"); D.ctx.setTransform(D.dpr, 0, 0, D.dpr, 0, 0);
-}
-function spawn(p, anywhere) {
-  const a = Math.random() * Math.PI * 2, r = anywhere ? 120 + Math.random() * Math.max(D.w, D.h) * .6 : Math.max(D.w, D.h) * (.55 + Math.random() * .2);
-  p.x = D.cx + Math.cos(a) * r; p.y = D.cy + Math.sin(a) * r; p.v = .6 + Math.random() * 1.4; p.life = 1; p.s = .8 + Math.random() * 1.2;
-  return p;
-}
+function dfxMeasure() {}
 function dfxStart() {
   if (D.on) return;
   D.on = true; clearTimeout(D.hideT);
   dfx.classList.remove("hidden");
-  dfxMeasure();
-  D.parts = reduceMotion ? [] : Array.from({ length: Math.round(Math.min(70, D.w * D.h / 20000)) }, () => spawn({}, true));
   requestAnimationFrame(() => dfx.classList.add("on"));
-  cancelAnimationFrame(D.raf);
-  if (!reduceMotion) D.raf = requestAnimationFrame(dfxTick);
 }
 function dfxStop(delay = 0) {
   D.seq++;
   const go = () => {
     D.on = false; dfx.classList.remove("on");
-    D.hideT = setTimeout(() => { cancelAnimationFrame(D.raf); dfx.classList.add("hidden"); D.warnDrag = false; dfxMode("idle"); dfxText("Drop to scan"); dfxChip("Waiting for file"); $(".dfx-ext").textContent = "FILE"; $(".dfx-hex").innerHTML = ""; $(".dfx-sub").textContent = "Read as bytes only – the file is never executed and never uploaded"; $("#drop").classList.remove("over"); }, 240);
+    D.hideT = setTimeout(() => { dfx.classList.add("hidden"); D.warnDrag = false; dfxMode("idle"); dfxText("Drop to scan"); dfxChip(""); $(".dfx-ext").textContent = "FILE"; $(".dfx-sub").textContent = "Read as bytes only – never executed, never uploaded"; $("#drop").classList.remove("over"); }, 150);
   };
   delay ? setTimeout(go, delay) : go();
 }
-function dfxTick() {
-  const g = D.ctx; if (!g) return;
-  g.clearRect(0, 0, D.w, D.h);
-  const col = D.mode === "warn" || (D.warnDrag && D.mode !== "dropped") ? D.warn : D.mode === "lock" || D.mode === "dropped" ? D.ok : D.color;
-  const burst = D.mode === "dropped", sp = D.mode === "lock" ? 3.2 : burst ? -7 : 1.2;
-  g.lineCap = "round";
-  for (const p of D.parts) {
-    const dx = D.cx - p.x, dy = D.cy - p.y, d = Math.hypot(dx, dy) || 1;
-    const ux = dx / d, uy = dy / d, step = p.v * sp * (burst ? 1 : Math.min(2.2, 260 / d + .6));
-    const tx = -uy * .35 * p.v, ty = ux * .35 * p.v;
-    const ox = p.x, oy = p.y;
-    p.x += ux * step + (burst ? 0 : tx); p.y += uy * step + (burst ? 0 : ty);
-    if (burst) p.life -= .028;
-    else if (d < 70) spawn(p, false);
-    const fade = burst ? Math.max(0, p.life) : Math.min(1, (d - 70) / 120) * Math.min(1, 900 / d) * .9;
-    if (fade <= 0) continue;
-    g.globalAlpha = fade * .75; g.strokeStyle = col; g.lineWidth = p.s;
-    g.beginPath(); g.moveTo(ox - (p.x - ox) * 2.5, oy - (p.y - oy) * 2.5); g.lineTo(p.x, p.y); g.stroke();
-  }
-  g.globalAlpha = 1;
-  if (D.on || D.mode === "dropped") D.raf = requestAnimationFrame(dfxTick);
-}
-function dfxPointer(x, y) {
-  D.mx = x; D.my = y;
-  if (D.mode === "dropped" || D.mode === "warn") return;
-  const dx = (x - D.cx) / (D.w / 2), dy = (y - D.cy) / (D.h / 2);
-  dfx.style.setProperty("--mx", x + "px"); dfx.style.setProperty("--my", y + "px");
-  dfx.style.setProperty("--rx", (-dy * 9).toFixed(2) + "deg"); dfx.style.setProperty("--ry", (dx * 11).toFixed(2) + "deg");
-  dfx.style.setProperty("--px", (dx * 14).toFixed(1) + "px"); dfx.style.setProperty("--py", (dy * 14).toFixed(1) + "px");
-  const near = Math.hypot(x - D.cx, y - D.cy) < Math.min(230, D.w / 3);
-  if (near !== (D.mode === "lock")) { dfxMode(near ? "lock" : "idle"); dfxText(near ? (D.warnDrag ? "Login required" : "Release to scan") : "Drop to scan"); }
-}
+function dfxPointer() {}
 function guessExt(e) {
   const it = e.dataTransfer && e.dataTransfer.items && e.dataTransfer.items[0];
   const t = (it && it.type || "").toLowerCase();
@@ -345,47 +289,26 @@ function sniff(u8, name) {
   if (m(0x23, 0x21)) return { n: 2, label: "Script" };
   return { n: 0, label: ["bat", "cmd", "ps1", "vbs", "js", "py", "sh"].includes(ext) ? "Script" : "File" };
 }
-function hexDump(u8, n) {
-  const rows = [];
-  for (let r = 0; r < 3; r++) {
-    const cells = [];
-    for (let i = r * 12; i < r * 12 + 12; i++) {
-      if (i >= u8.length) { cells.push("  "); continue; }
-      const h = u8[i].toString(16).padStart(2, "0").toUpperCase();
-      cells.push(i < n ? `<b>${h}</b>` : h);
-    }
-    rows.push(cells.join(" "));
-  }
-  return rows;
-}
-async function dfxIngest(f, x, y) {
+async function dfxIngest(f) {
   const my = ++D.seq;
   dfxStart();
   dfxMode("dropped");
-  dfx.style.setProperty("--rx", "0deg"); dfx.style.setProperty("--ry", "0deg"); dfx.style.setProperty("--px", "0px"); dfx.style.setProperty("--py", "0px");
-  if (!reduceMotion) {
-    const fl = document.createElement("div"); fl.className = "dfx-flash";
-    fl.style.setProperty("--fx", (x ?? D.cx) + "px"); fl.style.setProperty("--fy", (y ?? D.cy) + "px");
-    dfx.appendChild(fl); setTimeout(() => fl.remove(), 800);
-    D.parts.forEach(p => { p.life = .6 + Math.random() * .6; });
-  }
-  dfxText("Reading bytes");
-  $(".dfx-sub").textContent = f.name + " · " + fmtSize(f.size);
-  $(".dfx-ext").textContent = extOf(f.name).slice(0, 4);
+  dfxText(f.name.length > 48 ? f.name.slice(0, 45) + "…" : f.name);
+  $(".dfx-sub").textContent = fmtSize(f.size);
+  $(".dfx-ext").textContent = (extOf(f.name) || "FILE").slice(0, 4);
   let head = new Uint8Array(0);
-  try { head = new Uint8Array(await f.slice(0, 36).arrayBuffer()); } catch (e) {}
+  try { head = new Uint8Array(await f.slice(0, 16).arrayBuffer()); } catch (e) {}
   if (my !== D.seq) return;
   const sn = sniff(head, f.name);
-  dfxChip(sn.n ? `${[...head.slice(0, sn.n)].map(c => c >= 32 && c < 127 ? String.fromCharCode(c) : "·").join("")} · ${sn.label}` : sn.label);
-  const hex = $(".dfx-hex"); hex.innerHTML = "";
-  hexDump(head, sn.n).forEach((row, i) => setTimeout(() => { if (my === D.seq) hex.insertAdjacentHTML("beforeend", (i ? "\n" : "") + row); }, reduceMotion ? 0 : 90 + i * 110));
+  const magic = sn.n ? [...head.slice(0, sn.n)].map(c => c.toString(16).padStart(2, "0").toUpperCase()).join(" ") : "";
+  dfxChip(magic ? magic + "  ·  " + sn.label : sn.label);
   const blocked = isGuest() && !sn.zip && f.size <= MAX_FILE;
-  await new Promise(r => setTimeout(r, reduceMotion ? 150 : blocked ? 700 : 1050));
+  await new Promise(r => setTimeout(r, reduceMotion ? 120 : blocked ? 500 : 420));
   if (my !== D.seq) return;
   if (blocked) {
     dfxMode("warn"); dfxText("Login required");
     $(".dfx-sub").textContent = "Programs and scripts need a free Discord login";
-    await new Promise(r => setTimeout(r, reduceMotion ? 300 : 1300));
+    await new Promise(r => setTimeout(r, reduceMotion ? 300 : 1100));
     if (my !== D.seq) return;
     dfxStop(); show("home"); gate(sn.label);
     return;
@@ -411,8 +334,7 @@ window.addEventListener("dragenter", e => {
     $(".dfx-ext").textContent = x || "FILE";
     D.warnDrag = !!x && x !== "JAR" && x !== "ZIP" && isGuest();
     dfxMode("idle");
-    if (D.warnDrag) dfxChip(x + " · login required");
-    else dfxChip(x ? x + " detected" : "File detected");
+    dfxChip(D.warnDrag ? x + " needs a Discord login" : "");
     dfxText("Drop to scan");
   }
 });

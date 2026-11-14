@@ -27,6 +27,9 @@ const LOCAL_CSS = 'nav a[href="#/plans"], nav a[href="#/leaderboard"], nav a[hre
 const STRICT = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'";
 const ENGINE = "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'";
 let lastHit = Date.now();
+const startedAt = Date.now();
+const IDLE_EXIT = 3 * 60e3;
+const HEARTBEAT_JS = "(function(){function p(){fetch('/api/ping',{cache:'no-store'}).catch(function(){})}p();setInterval(p,15000);document.addEventListener('visibilitychange',p)})();";
 
 const server = http.createServer((q, r) => {
   lastHit = Date.now();
@@ -38,6 +41,8 @@ const server = http.createServer((q, r) => {
   q.on('data', d => { size += d.length; if (size < 1e6) chunks.push(d); });
   q.on('end', () => {
     const J = (o, c = 200) => { r.writeHead(c, { 'content-type': 'application/json', 'cache-control': 'no-store' }); r.end(JSON.stringify(o)); };
+    if (p === '/api/ping') return J({ ok: true });
+    if (p === '/heartbeat.js') { r.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store' }); return r.end(HEARTBEAT_JS); }
     if (p === '/api/me.php') return J(discord.me());
     if (p === '/api/login.php') return discord.login(q, r);
     if (p === '/api/logout.php') return J(discord.logout());
@@ -60,7 +65,7 @@ const server = http.createServer((q, r) => {
     const name = path.posix.basename(rel), engine = ['decompiler.html', 'host.js', 'worker.js'].includes(name);
     const headers = { 'content-type': types[path.extname(rel)] || 'application/octet-stream', 'content-security-policy': engine ? ENGINE : STRICT, 'x-content-type-options': 'nosniff', 'cache-control': 'no-cache' };
     r.writeHead(200, headers);
-    r.end(name === 'index.html' ? body.toString('utf8').replace('</head>', '<link rel="stylesheet" href="/local.css"></head>') : body);
+    r.end(name === 'index.html' ? body.toString('utf8').replace('</head>', '<link rel="stylesheet" href="/local.css"><script src="/heartbeat.js"></script></head>') : body);
   });
 });
 
@@ -79,13 +84,13 @@ server.listen(0, '127.0.0.1', () => {
   if (browser) {
     const profile = path.join(dataDir, 'Window');
     const child = spawn(browser, ['--app=' + url, '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check', '--window-size=1280,860', '--disable-features=Translate'], { stdio: 'ignore', windowsHide: false });
-    child.on('exit', code => { log('window closed', code); setTimeout(() => process.exit(0), 300); });
+    child.on('exit', code => log('browser launcher exited', code));
     child.on('error', e => { log('browser error', e.message); openDefault(url); });
   } else openDefault(url);
+  setInterval(() => { if (Date.now() - startedAt > 2 * 60e3 && Date.now() - lastHit > IDLE_EXIT) { log('no window for 3 min, exiting'); process.exit(0); } }, 20e3);
 });
 
 function openDefault(url) {
   spawn('cmd', ['/c', 'start', '""', url], { stdio: 'ignore', windowsHide: true, detached: true }).unref();
-  setInterval(() => { if (Date.now() - lastHit > 2 * 3600e3) process.exit(0); }, 60e3);
 }
 process.on('uncaughtException', e => log('error', e && e.stack || e));

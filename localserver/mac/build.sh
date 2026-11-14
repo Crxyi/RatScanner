@@ -24,7 +24,7 @@ node "$PROJ/localserver/make-config.js"
 cp "$PROJ/localserver/appserver.js" "$PROJ/localserver/mocksite.js" "$PROJ/localserver/discord.js" "$PROJ/localserver/desktop-config.json" "$OUT/Contents/Resources/server/"
 rsync -a --exclude api --exclude .htaccess "$PROJ/web-regfish/" "$OUT/Contents/Resources/site/"
 
-qlmanage -t -s 1024 -o "$WORK" "$HERE/icon.svg" >/dev/null 2>&1
+cp "$HERE/icon.png" "$WORK/icon.svg.png"
 ICONSET="$WORK/AppIcon.iconset"; mkdir -p "$ICONSET"
 for s in 16 32 128 256 512; do
   sips -z $s $s "$WORK/icon.svg.png" --out "$ICONSET/icon_${s}x${s}.png" >/dev/null

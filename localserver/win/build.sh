@@ -35,6 +35,7 @@ console.log(Object.keys(assets).length + " site files");
 
 node --experimental-sea-config "$OUT/sea-config.json"
 cp "$NODE_WIN" "$OUT/RatScanner.exe"
+[ -n "$SET_ICON" ] && NODE_PATH="${RESEDIT_PATH:-}" node "$HERE/set-icon.js" "$OUT/RatScanner.exe" "$HERE/icon.ico"
 ${POSTJECT:-npx --yes postject} "$OUT/RatScanner.exe" NODE_SEA_BLOB "$OUT/sea-prep.blob" --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --overwrite
 
 # Windows GUI subsystem: no black console window behind the app.

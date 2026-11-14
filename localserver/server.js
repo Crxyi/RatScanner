@@ -1,11 +1,11 @@
 const http=require('http'),fs=require('fs'),path=require('path');
 const root=process.argv[2]; let login=false,used=0;
-const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.wasm':'application/wasm'};
+const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.wasm':'application/wasm','.png':'image/png'};
 http.createServer((q,r)=>{const u=new URL(q.url,'http://x');const p=u.pathname;let b='';q.on('data',d=>b+=d);q.on('end',()=>{
  const J=(o,c=200)=>{r.writeHead(c,{'content-type':'application/json'});r.end(JSON.stringify(o));};
  if(p==='/api/login.php'){login=true;r.writeHead(302,{location:'/'});return r.end();}
  if(p==='/api/logout.php'){login=false;return J({ok:true});}
-  if(p==='/api/me.php')return J(login?{loggedIn:true,discordEnabled:true,invite:'https://discord.gg/kozyclient',user:{name:'Tester',avatar:'/favicon.svg',plan:null,limit:30,usedToday:2}}:{loggedIn:false,discordEnabled:true,guestJarsPerDay:5,guestLeft:Math.max(0,5-used),invite:'https://discord.gg/kozyclient'});
+  if(p==='/api/me.php')return J(login?{loggedIn:true,discordEnabled:true,invite:'https://discord.gg/kozyclient',user:{name:'Tester',avatar:'/favicon.png',plan:null,limit:30,usedToday:2}}:{loggedIn:false,discordEnabled:true,guestJarsPerDay:5,guestLeft:Math.max(0,5-used),invite:'https://discord.gg/kozyclient'});
  if(p==='/api/quota.php'){const j=JSON.parse(b||'{}');if(j.kind!=='jar'&&!login)return J({error:'Log in',needLogin:true},403);if(!login){if(used>=5)return J({error:'You reached the limit of 5 scans per day without login. Log in with Discord for more.',needLogin:true},429);used++;}return J({ticket:'t'.repeat(32),left:login?28:5-used});}
  if(p==='/api/fetch.php'){const j=JSON.parse(b||'{}');return require(path.join(__dirname,'mocksite.js')).site(String(j.url||'')).then(d=>{if(d.error)return J({error:d.error},400);if(d.file){const f=d.file;r.writeHead(200,{'content-type':'application/octet-stream','x-file-name':encodeURIComponent(new URL(f.url).pathname.split('/').pop()||'download.jar')});return r.end(f.body);}J(d);}).catch(e=>J({error:'Download failed: '+e.message},400));}
  if(p.startsWith('/api/'))return J({ok:true,users:[],plans:[],supporters:[],files:0});

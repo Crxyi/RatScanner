@@ -599,3 +599,8 @@ body.needs-login { overflow: hidden; }
 .login-card .btn-discord.big svg { width: 20px; height: 20px; }
 .login-card .login-wait { margin: 14px 0 0; }
 .login-card p:last-child { margin-bottom: 0; margin-top: 16px; }
+
+.brand-mark { display: inline-block; width: 28px; height: 28px; background: currentColor; -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; flex: none; }
+.brand > svg { display: none; }
+.login-logo .brand-mark { width: 40px; height: 40px; }
+.brand .brand-mark { width: 24px; height: 24px; }

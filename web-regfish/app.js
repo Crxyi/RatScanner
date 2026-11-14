@@ -237,7 +237,7 @@ function loginWall(me) {
     wall = document.createElement("div");
     wall.id = "loginWall";
     wall.className = "login-wall";
-    wall.innerHTML = `<div class="login-card"><div class="login-logo"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l11 4v8c0 7-4.6 12-11 14C9.6 27 5 22 5 15V7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="15" r="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M19 18l4 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+    wall.innerHTML = `<div class="login-card"><div class="login-logo"><span class="brand-mark"></span></div>
       <h2>Log in to use RatScanner</h2><p>Sign in with your Discord account to start scanning. The login opens in your browser – come back here afterwards.</p>
       <a class="btn-discord big" id="wallLogin" href="/api/login.php">${DISCORD_SVG}Log in with Discord</a><p class="login-wait muted small hidden" id="wallWait">Waiting for Discord… finish the login in your browser.</p>
       ${me.invite ? `<p class="muted small">No account on our server yet? <a href="${esc(me.invite)}" target="_blank" rel="noopener noreferrer">Join our Discord</a></p>` : ""}</div>`;

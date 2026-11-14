@@ -8,7 +8,7 @@ let appUrl = '';
 const discord = createDiscord({ dataDir, config, appUrl: () => appUrl, openExternal: u => require('child_process').spawn('/usr/bin/open', [u], { stdio: 'ignore', detached: true }).unref(), log: (...a) => console.log(...a) });
 const root = path.resolve(process.argv[2]);
 const port = +(process.argv[3] || 0);
-const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm', '.png': 'image/png' };
 const LOCAL_CSS = `nav a[href="#/plans"], nav a[href="#/leaderboard"], nav a[href="#/supporters"], #cfCheck, #quota, .gate { display: none !important; }`;
 const STRICT = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'";
 const ENGINE = "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'";

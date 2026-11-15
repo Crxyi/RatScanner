@@ -6,7 +6,7 @@ const REDIRECT = 'http://127.0.0.1:' + CALLBACK_PORT + '/callback';
 const API = 'https://discord.com/api/v10';
 const b64url = b => b.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {} }) {
+function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {}, sharedServer = false }) {
   const cfg = config || {};
   const file = path.join(dataDir, 'discord-session.json');
   let session = null, pending = null, cb = null;
@@ -33,12 +33,9 @@ function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {} }
     res.end(`<!doctype html><meta charset="utf-8"><title>RatScanner</title><body style="background:#0b0b0d;color:#e8e8ea;font:15px -apple-system,Segoe UI,sans-serif;display:grid;place-items:center;height:100vh;margin:0"><div style="text-align:center"><b style="font-size:18px">${title}</b><p style="color:#8a8a94">${text}</p></div></body>`);
   }
 
-  function stopCallback() { if (cb) { try { cb.close(); } catch (e) {} cb = null; } }
+  function stopCallback() { if (cb && !sharedServer) { try { cb.close(); } catch (e) {} cb = null; } }
 
-  function startCallback() {
-    return new Promise((resolve, reject) => {
-      if (cb) return resolve();
-      const s = http.createServer(async (q, r) => {
+  async function handleCallback(q, r) {
         const u = new URL(q.url, 'http://127.0.0.1');
         if (u.pathname !== '/callback') { r.writeHead(404); return r.end(); }
         const back = null;
@@ -68,14 +65,20 @@ function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {} }
           page(r, 500, 'Login failed', String(e.message).replace(/[<>&"]/g, ''), back);
         }
         setTimeout(stopCallback, 1000);
-      });
-      s.on('error', e => reject(new Error(e.code === 'EADDRINUSE' ? 'Port ' + CALLBACK_PORT + ' is in use by another program – close it and try again.' : e.message)));
+      }
+
+  function startCallback() {
+    return new Promise((resolve, reject) => {
+      if (cb || sharedServer) return resolve();
+      const s = http.createServer(handleCallback);
+      s.on('error', e => reject(new Error(e.code === 'EADDRINUSE' ? 'Another RatScanner is still open. Close all RatScanner windows, wait a minute and try again.' : e.message)));
       s.listen(CALLBACK_PORT, '127.0.0.1', () => { cb = s; resolve(); });
     });
   }
 
   return {
     enabled,
+    sharedServer,
     me() {
       const base = { local: true, requireLogin: enabled, discordEnabled: enabled, invite: cfg.invite || null };
       if (!session) return { ...base, loggedIn: false };
@@ -93,7 +96,8 @@ function createDiscord({ dataDir, config, appUrl, openExternal, log = () => {} }
       res.writeHead(302, { location: u, 'cache-control': 'no-store' });
       res.end();
     },
-    logout() { session = null; save(); return { ok: true }; }
+    logout() { session = null; save(); return { ok: true }; },
+    handleCallback
   };
 }
 module.exports = { createDiscord, CALLBACK_PORT, REDIRECT };

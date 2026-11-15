@@ -4,7 +4,7 @@ const http = require('http'), path = require('path'), fs = require('fs'), os = r
 const { spawn } = require('child_process');
 const sea = (() => { try { const s = require('node:sea'); return s.isSea() ? s : null; } catch (e) { return null; } })();
 const DEV_ROOT = process.env.RATSCANNER_SITE;
-const { createDiscord } = typeof __discordmod !== 'undefined' ? __discordmod : require('../discord.js');
+const { createDiscord, CALLBACK_PORT } = typeof __discordmod !== 'undefined' ? __discordmod : require('../discord.js');
 const desktopConfig = typeof __desktopConfig !== 'undefined' ? __desktopConfig : {};
 let appUrl = '';
 
@@ -12,7 +12,8 @@ const dataDir = path.join(process.env.LOCALAPPDATA || os.homedir(), 'RatScanner'
 try { fs.mkdirSync(dataDir, { recursive: true }); } catch (e) {}
 const logFile = path.join(dataDir, 'ratscanner.log');
 const log = (...a) => { try { fs.appendFileSync(logFile, new Date().toISOString() + ' ' + a.join(' ') + '\n'); } catch (e) {} };
-const discord = createDiscord({ dataDir, config: desktopConfig, appUrl: () => appUrl, openExternal: u => spawn('rundll32.exe', ['url.dll,FileProtocolHandler', u], { stdio: 'ignore', detached: true, windowsHide: true }).unref(), log });
+let discord = null;
+const makeDiscord = sharedServer => { discord = createDiscord({ dataDir, config: desktopConfig, appUrl: () => appUrl, openExternal: u => spawn('rundll32.exe', ['url.dll,FileProtocolHandler', u], { stdio: 'ignore', detached: true, windowsHide: true }).unref(), log, sharedServer }); };
 
 function readSite(rel) {
   if (sea) { try { return Buffer.from(sea.getAsset('site/' + rel)); } catch (e) { return null; } }
@@ -41,7 +42,8 @@ const server = http.createServer((q, r) => {
   q.on('data', d => { size += d.length; if (size < 1e6) chunks.push(d); });
   q.on('end', () => {
     const J = (o, c = 200) => { r.writeHead(c, { 'content-type': 'application/json', 'cache-control': 'no-store' }); r.end(JSON.stringify(o)); };
-    if (p === '/api/ping') return J({ ok: true });
+    if (p === '/api/ping') return J({ ok: true, app: 'ratscanner' });
+    if (p === '/callback' && discord.sharedServer) return discord.handleCallback(q, r);
     if (p === '/heartbeat.js') { r.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store' }); return r.end(HEARTBEAT_JS); }
     if (p === '/api/me.php') return J(discord.me());
     if (p === '/api/login.php') return discord.login(q, r);
@@ -77,21 +79,52 @@ function findBrowser() {
   return null;
 }
 
-server.listen(0, '127.0.0.1', () => {
-  const url = appUrl = 'http://127.0.0.1:' + server.address().port + '/';
-  log('listening', url);
+function listen(port) {
+  return new Promise((resolve, reject) => {
+    const onErr = e => { server.off('listening', onOk); reject(e); };
+    const onOk = () => { server.off('error', onErr); resolve(); };
+    server.once('error', onErr); server.once('listening', onOk);
+    server.listen(port, '127.0.0.1');
+  });
+}
+
+function openWindow(url) {
   if (process.platform !== 'win32') { console.log('RatScanner running at ' + url); return; }
   const browser = findBrowser();
-  if (browser) {
-    const profile = path.join(dataDir, 'AppWindow');
-    const child = spawn(browser, ['--app=' + url, '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check', '--window-size=1280,860', '--disable-features=Translate'], { stdio: 'ignore', windowsHide: false });
-    child.on('exit', code => log('browser launcher exited', code));
-    child.on('error', e => { log('browser error', e.message); openDefault(url); });
-  } else openDefault(url);
-  setInterval(() => { if (Date.now() - startedAt > 2 * 60e3 && Date.now() - lastHit > IDLE_EXIT) { log('no window for 3 min, exiting'); process.exit(0); } }, 20e3);
-});
+  if (!browser) return openDefault(url);
+  const profile = path.join(dataDir, 'AppWindow');
+  const child = spawn(browser, ['--app=' + url, '--user-data-dir=' + profile, '--no-first-run', '--no-default-browser-check', '--window-size=1280,860', '--disable-features=Translate'], { stdio: 'ignore', windowsHide: false, detached: true });
+  child.on('exit', code => log('browser launcher exited', code));
+  child.on('error', e => { log('browser error', e.message); openDefault(url); });
+  child.unref();
+}
 
 function openDefault(url) {
   spawn('cmd', ['/c', 'start', '""', url], { stdio: 'ignore', windowsHide: true, detached: true }).unref();
 }
+
+async function start() {
+  try {
+    await listen(CALLBACK_PORT);
+    makeDiscord(true);
+  } catch (e) {
+    if (e.code !== 'EADDRINUSE') throw e;
+    const other = await fetch('http://127.0.0.1:' + CALLBACK_PORT + '/api/ping', { signal: AbortSignal.timeout(2500) }).then(r => r.json()).catch(() => null);
+    if (other && other.app === 'ratscanner') {
+      log('RatScanner is already running, opening its window');
+      openWindow('http://127.0.0.1:' + CALLBACK_PORT + '/');
+      setTimeout(() => process.exit(0), 1500);
+      return;
+    }
+    log('port ' + CALLBACK_PORT + ' is used by another program, using a random port');
+    await listen(0);
+    makeDiscord(false);
+  }
+  const url = appUrl = 'http://127.0.0.1:' + server.address().port + '/';
+  log('listening', url);
+  openWindow(url);
+  setInterval(() => { if (Date.now() - startedAt > 2 * 60e3 && Date.now() - lastHit > IDLE_EXIT) { log('no window for 3 min, exiting'); process.exit(0); } }, 20e3);
+}
+start().catch(e => { log('start failed', e && e.stack || e); process.exit(1); });
+
 process.on('uncaughtException', e => log('error', e && e.stack || e));
